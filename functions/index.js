@@ -33,3 +33,28 @@ exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
       // Setting an 'uppercase' field in Firestore document returns a Promise.
       return snap.ref.set({uppercase}, {merge: true});
     });
+
+exports.addQuote = functions.https.onRequest(async (req, res) => {
+  
+  const text = req.body.text;
+  const keywords = req.body.keywords;
+
+  if(text == null || typeof text !== "string") {
+    res.status(400).send("Quote text not provided or is not string type");
+    return;
+  }
+
+  if(keywords == null || !keywords.every(i => (typeof i === "string"))) {
+    res.status(400).send("Quote keywords not provided or are not string type");
+    return;
+  }
+
+  await admin.firestore().collection("Quotes").add({
+    text: text,
+    keywords: keywords
+  });
+
+  functions.logger.log("Added quote.", text, keywords);
+
+  res.status(200).send("success");
+})
