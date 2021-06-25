@@ -58,3 +58,33 @@ exports.addQuote = functions.https.onRequest(async (req, res) => {
 
   res.status(200).send("success");
 })
+
+exports.getQuote = functions.https.onRequest(async (req, res) => {
+
+  const query = Object.entries(req.query);
+  const quotesRef = admin.firestore().collection("Quotes");
+  const snapshot = await quotesRef.get();
+
+  var selectedQuote = "";
+
+  var highestScore = 0;
+  var currentScore = 0;
+
+  snapshot.forEach(doc => {
+    currentScore = 0;
+    doc.data().keywords.forEach(keyword => {
+      for (const [key, value] of query) {
+        if(key.toLowerCase() == keyword.toLowerCase()) {
+          currentScore += value;
+        }
+      }
+    });
+
+    if(currentScore > highestScore || (currentScore == highestScore && Math.random() > 0.5)) {
+      highestScore = currentScore;
+      selectedQuote = doc.data().text;
+    }
+  });
+
+  res.status(200).send(selectedQuote);
+})
